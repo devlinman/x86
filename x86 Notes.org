@@ -13,23 +13,66 @@ gdb --version
 
 * Registers
 
-| Registers | Purpose                      |
-|-----------+------------------------------|
-| RAX       | accumulator / syscall return |
-| RBX       | general                      |
-| RCX       | counter                      |
-| RDX       | data                         |
-| RSI       | source index                 |
-| RDI       | destination index / arg1     |
-| RSP       | stack pointer                |
-| RIP       | instruction pointer          |
+| Registers  | Purpose                      |
+|------------+------------------------------|
+| RAX        | accumulator / syscall return |
+| RBX        | general                      |
+| RCX        | counter                      |
+| RDX        | data                         |
+| RSI        | source index                 |
+| RDI        | destination index / arg1     |
+| RSP        | stack pointer                |
+| RIP        | instruction pointer          |
+|            |                              |
+| CS         | code segment                 |
+| DS         | data segment                 |
+| SS         | stack segment                |
+| ES, FS, GS | extra segments               |
+|            |                              |
+
++ Original 8086 registers:
+    AX BX CX DX
+    SI DI BP SP
+
++ RIP is NOT directly writable normally in x86.
+
++ CS, SS, DS - Segment registers.
+
+* RFLAGS
+
+RFLAGS is a bitfield register.
+
+Meaning: one register, many individual bits with meanings.
 
 
-* FLAGS
+| Flag | Meaning          |
+|------+------------------|
+| ZF   | Zero flag        |
+| SF   | Sign flag        |
+| CF   | Carry flag       |
+| OF   | Overflow flag    |
+| PF   | Parity           |
+| IF   | Interrupt enable |
+|      |                  |
 
-| Flag | Meaning       |
-|------+---------------|
-| ZF   | Zero flag     |
-| SF   | Sign flag     |
-| CF   | Carry flag    |
-| OF   | Overflow flag |
+* Stack
+
++ push, pop are stack manipulators.
++
+
+** Stack dicipline
+
++ Every push must be balanced by a pop.
+
++ RET depends completely on stack correctness.
+
++ Otherwise, RET is corrupted. (SIGSEGV)
+
+
+* GDB
+
++ break func (b func) - breakpoint at func
+
++ info registers (i r) - show regs
+
++ x/xgx $rsp - examine memory at [rsp]

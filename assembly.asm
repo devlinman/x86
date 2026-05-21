@@ -1,34 +1,27 @@
-;; FLAGS
+;; Functions, Stack
 
-;; FLAGS drive control flow.
-;; add, sub: These modify registers & FLAGS
-
-;; Set:
-;; rax = 10
-;; Subtract:
-;; 10
-;; Then exit with:
-;; code 0 if result became zero
-;; code 1 otherwise
-
+;; Functions: call, ret
+;; Stack: push, pop
 
 global _start
 section .text
 
 done:
-    mov rax, 60
-    syscall
+    mov rax, 60                 ; rax = 60
+    syscall                     ; exit(12)
 
-equal:
-    mov rdi, 0
-    jmp done
-diff:
-    mov rdi, 1
-    jmp done
+func:
+    add rax, 5                  ; rax = 12
+    ret
 
 _start:
-    mov rbx, 20
-    sub rbx, 10
+    mov rax, 7
+    call func
+    mov rdi, rax                ; rdi = 12
 
-    jz equal
-    jmp diff
+    push rax                    ; [rsp] = 12 (0xc)
+    mov rax, 100                ; rax = 100
+    pop rcx                     ; rcx = 12
+
+    mov rdi, rcx                ; rdi = 12
+    jmp done
