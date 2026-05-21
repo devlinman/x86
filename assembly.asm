@@ -1,27 +1,36 @@
-;; Functions, Stack
+;; Stack frames, Local variables
 
-;; Functions: call, ret
-;; Stack: push, pop
+;;  push rbp; mov rbp, rsp;   ;;   ;mov rsp, rbp; pop rbp;
+;; |<--    prologue    -->|<-func->|<--   epilogue    -->|
+
+;; [rax] - memory access
 
 global _start
 section .text
 
 done:
     mov rax, 60                 ; rax = 60
-    syscall                     ; exit(12)
+    syscall                     ; exit(rdi)
 
 func:
-    add rax, 5                  ; rax = 12
-    ret
+    push rbp                    ; Prologue:
+    mov rbp, rsp                ; store this stack pointer in rbp
+    ;; enter                       ; equivalent to above two steps
+    ;; enter <<stacksize>>, 0      ; Not efficient
+    ;; In this case, enter 8, 0
+
+    sub rsp, 8                  ; Allocate 8 bytes
+
+    mov [rbp - 8], 55           ; load 55 into memory
+    mov rax, [rbp - 8]          ; Load from memory to rax
+
+    mov rsp, rbp                ; restore rsp
+    pop rbp                     ;
+    ;; leave                       ; equivalent to above two steps
+    ret                         ; clean return
 
 _start:
-    mov rax, 7
     call func
-    mov rdi, rax                ; rdi = 12
+    mov rdi, rax                ; rdi = 55
 
-    push rax                    ; [rsp] = 12 (0xc)
-    mov rax, 100                ; rax = 100
-    pop rcx                     ; rcx = 12
-
-    mov rdi, rcx                ; rdi = 12
-    jmp done
+    jmp done                    ; exit(55)

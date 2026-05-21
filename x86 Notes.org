@@ -23,6 +23,7 @@ gdb --version
 | RDI        | destination index / arg1     |
 | RSP        | stack pointer                |
 | RIP        | instruction pointer          |
+| RBP        | frame/base pointer           |
 |            |                              |
 | CS         | code segment                 |
 | DS         | data segment                 |
