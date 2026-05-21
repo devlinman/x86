@@ -1,0 +1,25 @@
+#+title: X86 Notes
+
+
+* Setup
+
+=sudo pacman -S nasm binutils gdb=
+
+#+begin_src shell
+nasm -v
+ld --version
+gdb --version
+#+end_src
+
+* Registers
+
+| Registers | Purpose                      |
+|-----------+------------------------------|
+| RAX       | accumulator / syscall return |
+| RBX       | general                      |
+| RCX       | counter                      |
+| RDX       | data                         |
+| RSI       | source index                 |
+| RDI       | destination index / arg1     |
+| RSP       | stack pointer                |
+| RIP       | instruction pointer          |
