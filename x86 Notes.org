@@ -55,6 +55,25 @@ Linux x86-64 function arguments:
 
 Return value: RAX
 
+** System V caller-saved
+| Registers |
+| --------- |
+| RAX       |
+| RCX       |
+| RDX       |
+| RSI       |
+| RDI       |
+| R8–R11    |
+
+** System V callee-saved
+
+| Registers |
+| --------- |
+| RBX       |
+| RBP       |
+| R12–R15   |
+
+
 * RFLAGS
 
 RFLAGS is a bitfield register.
@@ -146,3 +165,43 @@ so dq is common.
 + info registers (i r) - show regs
 
 + x/xgx $rsp - examine memory at [rsp]
+
+
+* Syscalls
+
++ exit [60]
+
+#+begin_src asm
+mov rdi, 0 ; exit(0)
+mov rdi, 1 ; exit(1)
+mov rax, 60
+syscall
+#+end_src
+
+-----
+
++ write [1]
+
+  FD = File descriptor
+
+  | FD | Meaning |
+  | -- | ------- |
+  |  0 | stdin   |
+  |  1 | stdout  |
+  |  2 | stderr  |
+
+
+  | Register | Meaning           |
+  | -------- | ----------------- |
+  | RAX      | syscall number    |
+  | RDI      | file descriptor   |
+  | RSI      | pointer to buffer |
+  | RDX      | number of bytes   |
+
+#+begin_src asm
+mov rax, 1                  ; syscall write()
+mov rdi, 1                  ; stdout (fd = 1)
+syscall
+ret
+
+#+end_src>

@@ -1,9 +1,10 @@
-;; Loops & Recursion
+;; write syscall
 
 global _start
 
 section .data
-    numbers: dq 1,2,3,4,5
+    kenobi:     db 10, "Hello, there!", 10, 0 ; Null-terminated (\n = 10)
+    greivous:   db "General kenobi...", 10, 0 ; Null-terminated
 
 section .text
 
@@ -11,22 +12,30 @@ done:
     mov rax, 60                 ; rax = 60
     syscall                     ; exit(rdi)
 
-sum_array:
-    add rax, [rdi + rbx * 8]    ; rax - accumulator
-    add rbx, 1                  ; count += 1
-    cmp rbx, rsi                ; if count < length
-    jl sum_array                ; loop
+show:
+    xor rax, rax
+    xor rdx, rdx
+    call find_new_line_char     ; stores length in rdx = arg4
+
+    mov rax, 1                  ; syscall write()
+    mov rdi, 1                  ; stdout (fd = 1)
+    syscall
     ret
+
+find_new_line_char:
+    movzx eax, byte [rsi + rdx] ; zero extend and copy byte. Using mov will assume 64-bit.
+    add rdx, 1                  ; index += 1
+    cmp eax, 0                  ; if string[index] != 0
+    jne find_new_line_char      ; loop
+    ret                         ; rbx stores the number
 
 _start:
 
-    lea rdi, [rel numbers]      ; arg1 = Pointer to Array
-    mov rsi, 5                  ; arg2  = length
+    lea rsi, [rel kenobi]       ; arg1 = Pointer to buffer
+    call show                   ; arg1 = rax = 1, arg2 = rdi = 1, arg3 = rsi, arg4 = rdx
 
-    xor rax, rax
-    xor rbx, rbx
+    lea rsi, [rel greivous]     ; arg1 = Pointer to buffer
+    call show                   ; arg1 = rax = 1, arg2 = rdi = 1, arg3 = rsi, arg4 = rdx
 
-    call sum_array
-
-    mov rdi, rax                ; rdi = rax = 15
-    jmp done                    ; exit(15)
+    mov rdi, 0                  ; exit(0)
+    jmp done
