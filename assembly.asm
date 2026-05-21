@@ -1,5 +1,4 @@
-;; Function Parameters
-;; ABI conventions
+;; Loops & Recursion
 
 global _start
 section .text
@@ -8,16 +7,22 @@ done:
     mov rax, 60                 ; rax = 60
     syscall                     ; exit(rdi)
 
-addnums:
-    mov rax, rdi                ; rax = 20
-    add rax, rsi                ; rax = 42
+sum_to_n:
+    add rbx, 1                  ; rbx += 1
+    add rax, rbx                ; rax = rax + rbx
+
+    cmp rbx, rdi                ; if rbx < n
+    jl sum_to_n                 ; recursive call
+
     ret
 
 _start:
-    mov rdi, 20                 ; arg1 = 20
-    mov rsi, 22                 ; arg2 = 22
+    mov rdi, 10                 ; input argument n = 10
 
-    call addnums
-    mov rdi, rax                ; rdi = 42
+    xor rax, rax                ;
+    xor rbx, rbx                ;
 
-    jmp done                    ; exit(42)
+    call sum_to_n
+    mov rdi, rax                ; rdi = rax = 55
+
+    jmp done                    ; exit(55)
