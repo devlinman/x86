@@ -23,3 +23,13 @@ gdb --version
 | RDI       | destination index / arg1     |
 | RSP       | stack pointer                |
 | RIP       | instruction pointer          |
+
+
+* FLAGS
+
+| Flag | Meaning       |
+|------+---------------|
+| ZF   | Zero flag     |
+| SF   | Sign flag     |
+| CF   | Carry flag    |
+| OF   | Overflow flag |

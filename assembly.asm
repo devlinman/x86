@@ -1,30 +1,34 @@
-;; Linux x86-64 syscall convention:
+;; FLAGS
 
-;; Meaning:Register
-;; syscall number: RAX
-;; arg1: RDI
-;; syscall instruction: syscall
-;;
-;; For exit():
-;; syscall number = 60
-;; Argument:
-;; exit code goes in RDI
-;; Then:
-;; syscall
-;; executes kernel transition.
+;; FLAGS drive control flow.
+;; add, sub: These modify registers & FLAGS
 
-;; Use: mov, syscall
 ;; Set:
-;; RAX = syscall number
-;; RDI = exit code
-;; Then invoke: syscall
-;;
+;; rax = 10
+;; Subtract:
+;; 10
+;; Then exit with:
+;; code 0 if result became zero
+;; code 1 otherwise
+
 
 global _start
-
 section .text
 
-_start:
+done:
     mov rax, 60
-    mov rdi, 70
     syscall
+
+equal:
+    mov rdi, 0
+    jmp done
+diff:
+    mov rdi, 1
+    jmp done
+
+_start:
+    mov rbx, 20
+    sub rbx, 10
+
+    jz equal
+    jmp diff
