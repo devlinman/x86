@@ -1,28 +1,32 @@
 ;; Loops & Recursion
 
 global _start
+
+section .data
+    numbers: dq 1,2,3,4,5
+
 section .text
 
 done:
     mov rax, 60                 ; rax = 60
     syscall                     ; exit(rdi)
 
-sum_to_n:
-    add rbx, 1                  ; rbx += 1
-    add rax, rbx                ; rax = rax + rbx
-
-    cmp rbx, rdi                ; if rbx < n
-    jl sum_to_n                 ; recursive call
-
+sum_array:
+    add rax, [rdi + rbx * 8]    ; rax - accumulator
+    add rbx, 1                  ; count += 1
+    cmp rbx, rsi                ; if count < length
+    jl sum_array                ; loop
     ret
 
 _start:
-    mov rdi, 10                 ; input argument n = 10
 
-    xor rax, rax                ;
-    xor rbx, rbx                ;
+    lea rdi, [rel numbers]      ; arg1 = Pointer to Array
+    mov rsi, 5                  ; arg2  = length
 
-    call sum_to_n
-    mov rdi, rax                ; rdi = rax = 55
+    xor rax, rax
+    xor rbx, rbx
 
-    jmp done                    ; exit(55)
+    call sum_array
+
+    mov rdi, rax                ; rdi = rax = 15
+    jmp done                    ; exit(15)

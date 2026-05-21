@@ -72,6 +72,26 @@ Meaning: one register, many individual bits with meanings.
 | IF   | Interrupt enable |
 |      |                  |
 
+
+* Instructions
+
+| operation | format                 |
+|-----------+------------------------|
+| mov       | mov rax, rbx           |
+| add       | add rax, rbx           |
+| sub       | aub rax, rbx           |
+| cmp       | cmp rax, rbx           |
+| jmp       | jmp func               |
+| jl        | jl func                |
+| je        | je func                |
+| ret       | -                      |
+| call      | call func              |
+| xor       | xor rax, rbx           |
+| syscall   | -                      |
+| lea       | lea rdi, [rel numbers] |
+|           |                        |
+
+
 * Stack
 
 + push, pop are stack manipulators.
@@ -85,6 +105,39 @@ Meaning: one register, many individual bits with meanings.
 
 + Otherwise, RET is corrupted. (SIGSEGV)
 
+
+* Sections
+
+| Section   | Purpose                   |
+| --------- | ------------------------- |
+| .text     | machine code              |
+| .data     | initialized writable data |
+| .bss      | uninitialized data        |
+| .rodata   | read-only constants       |
+
+* Assembler directives
+
+db:
+Define byte (1 byte)
+db 1
+
+dw:
+Define word (2 bytes)
+dw 1234
+
+dd:
+Define doubleword (4 bytes)
+dd 123456
+
+dq:
+Define quadword (8 bytes)
+dq 123456789
+
+Most x86-64 integer work uses:
+quadwords
+64-bit registers
+
+so dq is common.
 
 * GDB
 
