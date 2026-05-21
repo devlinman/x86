@@ -1,7 +1,7 @@
 #!/usr/bin/zsh -f
 
 dump() {
-    if [[ "$1" == "intel" ]]; then
+    if [[ "$1" == "intel" ]] || [[ "$1" == "i" ]]; then
         objdump -d -Mintel exe
     else
         objdump -d exe

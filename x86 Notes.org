@@ -39,6 +39,22 @@ gdb --version
 
 + CS, SS, DS - Segment registers.
 
+
+** System V ABI calling convention
+
+Linux x86-64 function arguments:
+
+| Argument | Register |
+|----------+----------|
+|        1 | RDI      |
+|        2 | RSI      |
+|        3 | RDX      |
+|        4 | RCX      |
+|        5 | R8       |
+|        6 | R9       |
+
+Return value: RAX
+
 * RFLAGS
 
 RFLAGS is a bitfield register.
