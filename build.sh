@@ -14,12 +14,15 @@ clean() {
     exit
 }
 
-build() {
-    nasm -f elf64 assembly.asm -o assembly.o
-
+debug() {
+    nasm -f elf64 -g -F dwarf assembly.asm -o assembly.o
     ld assembly.o -o exe
     exit
-
+}
+build() {
+    nasm -f elf64 assembly.asm -o assembly.o
+    ld assembly.o -o exe
+    exit
 }
 
 case $1 in
@@ -28,6 +31,9 @@ case $1 in
     ;;
 "c" | "clean")
     clean
+    ;;
+"b"|"debug")
+    debug
     ;;
 *)
     build
