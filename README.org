@@ -1,8 +1,20 @@
-#+TITLE: X86 Notes
+#+TITLE: x86_64 Notes
 #+AUTHOR: devlinman
 
+* Contents :toc_1:
+- [[#setup][Setup]]
+- [[#registers][Registers]]
+- [[#rflags][RFLAGS]]
+- [[#instructions][Instructions]]
+- [[#memory-addressing][Memory Addressing]]
+- [[#stack][Stack]]
+- [[#sections][Sections]]
+- [[#syscalls][Syscalls]]
+- [[#gdb][GDB]]
 
 * Setup
+
+** Install
 
 =sudo pacman -S nasm binutils gdb=
 
@@ -12,38 +24,83 @@ ld --version
 gdb --version
 #+end_src
 
++ Other packages:
+    =strace= (trace syscalls), =objdump= (inspect binaries), =gcc= (linking convenience)
+
+** Build
+
++ Assemble:
+
+#+begin_src shell
+nasm -f elf64 hello.asm -o hello.o
+#+end_src
+
++ Link:
+
+#+begin_src shell
+ld hello.o -o hello
+#+end_src
+
+-----
+
 * Registers
 
-| Registers  | Purpose                      |
-|------------+------------------------------|
-| RAX        | accumulator / syscall return |
-| RBX        | general                      |
-| RCX        | counter                      |
-| RDX        | data                         |
-| RSI        | source index                 |
-| RDI        | destination index / arg1     |
-| RSP        | stack pointer                |
-| RIP        | instruction pointer          |
-| RBP        | frame/base pointer           |
-|            |                              |
-| CS         | code segment                 |
-| DS         | data segment                 |
-| SS         | stack segment                |
-| ES, FS, GS | extra segments               |
-|            |                              |
+| Register   | Purpose                          |
+|------------+----------------------------------|
+| RAX        | accumulator / return value       |
+| RBX        | general-purpose                  |
+| RCX        | counter                          |
+| RDX        | data / syscall arg3              |
+| RSI        | source index / syscall arg2      |
+| RDI        | destination index / syscall arg1 |
+| RSP        | stack pointer                    |
+| RBP        | frame/base pointer               |
+| RIP        | instruction pointer              |
+| R8-R15     | additional general registers     |
+|            |                                  |
+| CS         | code segment                     |
+| DS         | data segment                     |
+| SS         | stack segment                    |
+| ES, FS, GS | extra segment registers          |
 
 + Original 8086 registers:
-    AX BX CX DX
-    SI DI BP SP
+  - AX BX CX DX
+  - SI DI BP SP
 
-+ RIP is NOT directly writable normally in x86.
++ RIP is not directly writable using MOV.
 
-+ CS, SS, DS - Segment registers.
++ RIP changes via: =jmp=, =call=, =ret=, interrupts/exceptions
 
++ In x86_64 Linux:
+  - segmentation is mostly unused
+  - FS/GS are still important
+  - FS is commonly used for thread-local storage
+
+
+*** Subregisters:
+
+| 64-bit | 32-bit | 16-bit | 8-bit |
+|--------+--------+--------+-------|
+| RAX    | EAX    | AX     | AL    |
+| RBX    | EBX    | BX     | BL    |
+| RCX    | ECX    | CX     | CL    |
+| RDX    | EDX    | DX     | DL    |
+
++ Writing to a 32-bit register zero-extends the upper 32 bits.
+
+  #+begin_src asm
+  mov eax, 1
+  ; RAX becomes 1
+  ; upper 32 bits become 0
+  #+end_src
+
++ AL only writes to the lower portion while upper portion remains unchanged.
+
+-----
 
 ** System V ABI calling convention
 
-Linux x86-64 function arguments:
++ Linux x86_64 function arguments:
 
 | Argument | Register |
 |----------+----------|
@@ -54,166 +111,375 @@ Linux x86-64 function arguments:
 |        5 | R8       |
 |        6 | R9       |
 
-Return value: RAX
++ Return values: RAX
 
-** System V caller-saved
++ Additional arguments: passed on the stack
+
++ Stack alignment: stack must be 16-byte aligned before CALL
+
+-----
+
+** System V caller-saved registers
+
++ Caller must preserve these if needed:
+
 | Registers |
-| --------- |
+|-----------|
 | RAX       |
 | RCX       |
 | RDX       |
 | RSI       |
 | RDI       |
-| R8–R11    |
+| R8-R11    |
 
-** System V callee-saved
+
+** System V callee-saved registers
+
++ Callee must restore these if modified:
 
 | Registers |
-| --------- |
+|-----------|
 | RBX       |
 | RBP       |
-| R12–R15   |
+| R12-R15   |
 
+-----
 
 * RFLAGS
 
 RFLAGS is a bitfield register.
 
-Meaning: one register, many individual bits with meanings.
+One register containing many individual flag bits.
 
+| Flag | Meaning                    |
+|------+----------------------------|
+| ZF   | Zero flag                  |
+| SF   | Sign flag                  |
+| CF   | Carry flag                 |
+| OF   | Overflow flag              |
+| PF   | Parity flag                |
+| IF   | Interrupt enable flag      |
 
-| Flag | Meaning          |
-|------+------------------|
-| ZF   | Zero flag        |
-| SF   | Sign flag        |
-| CF   | Carry flag       |
-| OF   | Overflow flag    |
-| PF   | Parity           |
-| IF   | Interrupt enable |
-|      |                  |
+#+begin_src asm
+cmp rax, rbx
+je equal
+#+end_src
 
++ =cmp= sets flags, with no modifications to registers
+
++ =je= checks ZF
+
+-----
 
 * Instructions
 
-| operation | format                 |
+| Operation | Example                |
 |-----------+------------------------|
 | mov       | mov rax, rbx           |
 | add       | add rax, rbx           |
-| sub       | aub rax, rbx           |
+| sub       | sub rax, rbx           |
+| imul      | imul rax, rbx          |
+| xor       | xor rax, rax           |
 | cmp       | cmp rax, rbx           |
+| test      | test rax, rax          |
 | jmp       | jmp func               |
-| jl        | jl func                |
-| je        | je func                |
-| ret       | -                      |
 | call      | call func              |
-| xor       | xor rax, rbx           |
-| syscall   | -                      |
+| ret       | ret                    |
+| syscall   | syscall                |
 | lea       | lea rdi, [rel numbers] |
-|           |                        |
+| je/jz     | equal / zero           |
+| jne/jnz   | not equal              |
+| jl        | signed less-than       |
+| jg        | signed greater-than    |
+| jb        | unsigned below         |
+| ja        | unsigned above         |
 
++ =xor rax, rax= is a commonly used idiom to zero a register.
+
++ =lea= computes addresses.
+
++ =test rax, rax= checks whether RAX is zero without modifying it.
+
+
+** Signed vs Unsigned
+
+Signed jumps: =jl=, =jg=
+
+Unsigned jumps: =jb=, =ja=
+
+
+** Endianness
+
++ x86 is little-endian.
+
+#+begin_src text
+0x12345678
+#+end_src
+
++ Stored in memory as:
+
+#+begin_src text
+78 56 34 12
+#+end_src
+
+-----
+
+* Memory Addressing
+
++ Address of msg:
+
+#+begin_src asm
+mov rax, msg
+#+end_src
+
++ Value stored at msg:
+
+#+begin_src asm
+mov rax, [msg]
+#+end_src
+
++ Read memory at address stored in RBX:
+
+#+begin_src asm
+mov rax, [rbx]
+#+end_src
+
++ Write RAX into memory pointed to by RBX:
+
+#+begin_src asm
+mov [rbx], rax
+#+end_src
+
+
++ Addressing forms:
+
+#+begin_src asm
+mov rax, [rbx]
+mov rax, [rbx+8]
+mov rax, [rbx+rcx*4]
+#+end_src
+
+-----
 
 * Stack
 
-+ push, pop are stack manipulators.
-+ =push rax= equivalent to:
++ Stack grows downward:
+  - pushing decreases RSP
+  - popping increases RSP
+
++ Stack-manipulation instructions: =push=, =pop=, =call=, =ret=.
+
+Push to stack:
+
 #+begin_src asm
+push rax
+
+;; Alternate Method
+sub rsp, 8
 mov [rsp], rax
+#+end_src
+
+Pop from stack:
+
+#+begin_src asm
+pop rax
+
+;; Alternate Method
+mov rax, [rsp]
 add rsp, 8
 #+end_src
 
-** Stack dicipline
++ CALL internally does:
+  + push return address
+  + jump to target
 
-+ Every push must be balanced by a pop.
++ RET internally does:
+  + pop return address into RIP
 
-+ RET depends completely on stack correctness.
 
-+ Otherwise, RET is corrupted. (SIGSEGV)
+** Stack discipline
 
++ Every PUSH should eventually be balanced by POP.
+
++ Incorrect stack management can corrupt:
+  + return addresses
+  + local variables
+  + saved registers
+
++ Result: crashes, undefined behavior, SIGSEGV
+
++ Function prologue:
+
+#+begin_src asm
+push rbp
+mov rbp, rsp
+sub rsp, 32
+#+end_src
+
++ Function epilogue:
+
+#+begin_src asm
+mov rsp, rbp
+pop rbp
+ret
+#+end_src
+
+-----
 
 * Sections
 
-| Section   | Purpose                   |
-| --------- | ------------------------- |
-| .text     | machine code              |
-| .data     | initialized writable data |
-| .bss      | uninitialized data        |
-| .rodata   | read-only constants       |
+| Section | Purpose                   |
+|---------+---------------------------|
+| .text   | executable machine code   |
+| .data   | initialized writable data |
+| .bss    | uninitialized data        |
+| .rodata | read-only constants       |
 
-* Assembler directives
 
-db:
-Define byte (1 byte)
+** Assembler directives
+
++ db: define byte (1 byte)
+
+#+begin_src asm
 db 1
+#+end_src
 
-dw:
-Define word (2 bytes)
++ dw: define word (2 bytes)
+
+#+begin_src asm
 dw 1234
+#+end_src
 
-dd:
-Define doubleword (4 bytes)
++ dd: define doubleword (4 bytes)
+
+#+begin_src asm
 dd 123456
+#+end_src
 
-dq:
-Define quadword (8 bytes)
++ dq: define quadword (8 bytes)
+
+#+begin_src asm
 dq 123456789
+#+end_src
 
-Most x86-64 integer work uses:
-quadwords
-64-bit registers
++ Common in x86_64:
+  + 64-bit registers
+  + 64-bit pointers
+  + quadwords (=dq=)
 
-so dq is common.
++ Reserve-space directives:
 
-* GDB
+| Directive | Meaning            |
+|-----------+--------------------|
+| resb      | reserve bytes      |
+| resw      | reserve words      |
+| resd      | reserve dwords     |
+| resq      | reserve qwords     |
 
-+ break func (b func) - breakpoint at func
++ Usually used in: =.bss=
 
-+ info registers (i r) - show regs
-
-+ x/xgx $rsp - examine memory at [rsp]
-
-+ =gdb --tui= is good.
-
+-----
 
 * Syscalls
 
-+ exit [60]
+Linux x86_64 syscall convention:
+
+| Register | Meaning        |
+|----------+----------------|
+| RAX      | syscall number |
+| RDI      | arg1           |
+| RSI      | arg2           |
+| RDX      | arg3           |
+| R10      | arg4           |
+| R8       | arg5           |
+| R9       | arg6           |
+
+Return value: RAX
+
+
+** exit [60]
 
 #+begin_src asm
-mov rdi, 0 ; exit(0)
-mov rdi, 1 ; exit(1)
 mov rax, 60
+mov rdi, 0                      ; exit code = rdi = 0
+syscall
+#+end_src
+
+
+** write [1]
+
++ File descriptors:
+
+| FD | Meaning |
+|----+---------|
+|  0 | stdin   |
+|  1 | stdout  |
+|  2 | stderr  |
+
++ Arguments:
+
+| Register | Meaning           |
+|----------+-------------------|
+| RDI      | file descriptor   |
+| RSI      | pointer to buffer |
+| RDX      | number of bytes   |
+
+#+begin_src asm
+mov rax, 1
+mov rdi, 1                      ; fd = stdout
+mov rsi, msg                    ; pointer to bytes
+mov rdx, msg_len                ; length of message bytes
+syscall
+#+end_src
+
+
+** read [0]
+
++ Returns number of bytes read in RAX
+
+#+begin_src asm
+mov rax, 0
+mov rdi, 0                      ; fd = rdi = stdin
+mov rsi, buffer                 ; address of buffer
+mov rdx, 64                     ; Max. bytes to read
 syscall
 #+end_src
 
 -----
 
-+ write [1]
+* GDB
 
-  FD = File descriptor
++ Commands:
 
-  | FD | Meaning |
-  | -- | ------- |
-  |  0 | stdin   |
-  |  1 | stdout  |
-  |  2 | stderr  |
+| Command        | Meaning              |
+|----------------+----------------------|
+| break _start   | breakpoint at _start |
+| run            | run program          |
+| si             | step instruction     |
+| ni             | next instruction     |
+| info registers | show registers       |
+| x/xgx $rsp     | inspect stack memory |
+| disas          | disassemble function |
 
++ TUI mode:
 
-  | Register | Meaning           |
-  | -------- | ----------------- |
-  | RAX      | syscall number    |
-  | RDI      | file descriptor   |
-  | RSI      | pointer to buffer |
-  | RDX      | number of bytes   |
+#+begin_src shell
+$ gdb --tui ./exe
 
-#+begin_src asm
-mov rax, 1                  ; syscall write()
-mov rdi, 1                  ; stdout (fd = 1)
-syscall
-ret
+# TUI layout commands
+layout asm (la asm)
+layout regs (la r)
+run (r)
+#+end_src
 
-#+end_src>
++ My =~/.gdbinit=
+
+#+begin_src conf
+set disassembly-flavor intel
+set debuginfod enabled on
+#+end_src
 
 -----
-+ read [0]
 
-Returns number of bytes read to RAX
+
+# Made with Doom Emacs 
