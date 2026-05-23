@@ -1,4 +1,5 @@
 #!/usr/bin/zsh -f
+set -Eeo pipefail
 
 dump() {
     if [[ "$1" == "intel" ]] || [[ "$1" == "i" ]]; then
