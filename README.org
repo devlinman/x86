@@ -32,14 +32,18 @@ gdb --version
 + Assemble:
 
 #+begin_src shell
-nasm -f elf64 hello.asm -o hello.o
+nasm -f elf64 assembly.asm -o assembly.o
 #+end_src
 
 + Link:
 
 #+begin_src shell
-ld hello.o -o hello
+ld assembly.o -o exe
 #+end_src
+
++ Using ~build.sh~
+
+    =./build.sh=
 
 -----
 
